@@ -1,0 +1,97 @@
+<!--
+<div class="logret">
+    <div id="erro" class="msgret">
+        <p>{{msgvalide.erro}}</p>
+    </div>
+</div>
+-->
+<section class="bodybackgray">
+<div class="cabec">
+    
+    <!--
+    <div id="msg" class="msg">
+        <p>{{msgvalide.logmsg}}</p>
+    </div>
+    -->
+    <div class="logomacro">
+      <img src="http://erp.macromaq.com.br:3000/img/logomacromaq.png">
+    </div>
+    <h2> Painel de Validação de Fretes </h2>
+ 
+    <div class="legSta">
+        <img src="http://erp.macromaq.com.br:3000/img/status.png"></img> - Frete ainda não validado<br>
+        <!--<img src="http://10.1.1.210:3000/img/status4.png"></img> - Frete com Romaneio<br> -->
+        <img src="http://erp.macromaq.com.br:3000/img/status1.png"></img> - Frete Digitado no ERP<br>
+        <img src="http://erp.macromaq.com.br:3000/img/status2.png"></img> - Frete Fechado no ERP<br>
+    </div>
+    <div class="formchave">
+         <form method="POST" action="/fretes">
+             <!--
+             <div id="labdate">
+                 Data de Emissao
+             </div>   
+             <input type="date" id="datini" name="datini">
+             <input type="date" id="datfin" name="datfin">
+             <input type="text" id="nomtra" nome="nomtra" placeholder="Nome da Transportadora"><br>
+             -->
+             <input type="text" name="chave" placeholder="Chave CT-e" class="chave">
+             <input type="submit" value="Buscar" name="Buscar" class="btnchave">
+         </form>
+    </div>
+</div>
+
+<!--
+<div class="valcte">
+    <form action="/" method="POST">
+        <input type="text" name="numcte" id="inpnumcte" value="{{NumCtei}}">
+        <input type="text" name="emicte" id="inpemicte" value="{{NomEmii}}">
+        <input type="text" name="datemi" id="inpdatemi" value="{{DatEmii}}">
+        <input type="text" name="vlrcte" id="inpvlrcte" value="{{VlrCtei}}">
+        <input type="submit" value="Validar" class="btnvalid">
+    </form>
+
+</div>
+-->
+<div class="tabcte">
+    <table>
+        <div class="filial">
+        <select id="selfil">
+          <option value="" disabled selected>FILIAL</option>
+          <option value="SAO JOSE">SAO JOSE</option>
+          <option value="CHAPECO">CHAPECO</option>
+          <option value="CURITIBA">CURITIBA</option>
+          <option value="ITUPEVA">ITUPEVA</option>
+          <option value="JOINVILLE">JOINVILLE</option>
+        </select>
+    </div>
+    <thead>
+        <tr>
+            <th id="status">STATUS</th>
+            <th id="sigfil">FILIAL</th>
+            <th id="numcte">NÚMERO</th>
+            <th id="nomemi">EMISSOR</th>
+            <th id="cgcfor">CNPJ</th>
+            <th id="datemi">EMISSÃO</th>
+            <th id="vlrcte">VALOR</th>
+            <th class="refresh"><a href="/fretes"></a></th>
+        </tr>
+    </thead>
+    <tbody>
+        
+        {{#each relacaocte}}
+        <tr>
+            <td class="status{{sitNfc}}"></td>
+            <td id="sigfil">{{sigFil}}</td>
+            <td>{{numCte}}</td>
+            <td>{{nomEmi}}</td>
+            <td>{{cgcFor}}</td>
+            <td id="datemi">{{datEmi}}</td>
+            <td id="vlrcte">{{vlrCte}}</td>
+        </tr>
+        {{/each}}
+    </tbody>
+    </table>
+
+    {{relacaocte.numCte}}
+</div>
+</section>

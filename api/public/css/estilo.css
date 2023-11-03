@@ -1,0 +1,262 @@
+body {
+    background-color: rgb(251, 252, 249);
+    margin: 0%;
+}
+.logomacro img {
+    width: 220px;
+    height: 50px;
+}
+h2 {
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    text-align: center;
+    margin: 0%;
+    color: rgb(184, 183, 183);
+}
+.cabec {
+    background-color: rgb(193, 224, 250);
+    padding: 10px;
+    box-shadow: rgb(11, 12, 12);
+}
+.formchave {
+    width: 1000px; 
+    margin-left: auto;
+    margin-right: auto; 
+}
+.chave {
+    width: 800px;
+    height: 20px;
+    padding: 20px;
+    border-radius: 10px;
+    font-size: 22pt;
+    margin-left: auto;
+    margin-right: auto;
+    border: none;
+}
+.chave:hover{
+   background-color: rgb(202, 202, 201);
+}
+.btnchave {
+    width: 130px;
+    height: 50px;
+    font-size: 16pt;
+    border-radius: 10px;
+    cursor: pointer;
+    border: none;
+    margin-left: 10px;
+    background-color: rgb(244, 244, 245);
+
+}
+.btnchave:hover {
+    background-color: rgb(2, 2, 2);
+    color: white;
+}
+.valcte {
+    width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 30px;
+}
+#inpnumcte {
+    width: 150px;
+    height: 30px;
+}
+#inpemicte {
+    width: 350px;
+    height: 30px;
+}
+#inpdatemi {
+    width: 200px;
+    height: 30px;
+}
+#inpvlrcte {
+    width: 150px;
+    height: 30px;
+}
+.tabcte {
+    width: 1500px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    padding: 0;
+}
+.tabcte tr th {
+    background-color: rgb(221, 234, 250);
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    padding: 5px;
+    border-radius: 5px;
+}
+tbody td {
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    font-size: 14pt;
+}
+#vlrcte {
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    padding: 8px;
+    text-align: right;
+}
+#status { 
+    width: 40px;
+}
+#sigfil { 
+    width: 130px;
+}
+#numcte { 
+    width: 100px;
+}
+#nomemi { 
+    width: 500px;
+}
+#cgcfor { 
+    width: 230px;
+}
+#datemi {
+    width: 150px;
+    text-align: center;
+}
+#vlrcte {
+    width: 100px;
+}
+.btnvalid {
+    width: 100px;
+    height: 10px;
+}
+.refresh {
+    width: 35px;
+    height: 35px;
+}
+.status0 {
+    background-image: url("http://erp.macromaq.com.br:3000/img/status.png");
+    background-repeat: no-repeat;
+    background-size: 35px;
+    background-position: center;
+}
+.status1 {
+    background-image: url("http://erp.macromaq.com.br:3000/img/status1.png");
+    background-repeat: no-repeat;
+    background-size: 42px;
+    background-position: center;
+}
+.status2 {
+    background-image: url("http://erp.macromaq.com.br:3000/img/status2.png");
+    background-repeat: no-repeat;
+    background-size: 35px;
+    background-position: center;
+}
+.status3 {
+    background-image: url("http://erp.macromaq.com.br:3000/img/status3.png");
+    background-repeat: no-repeat;
+    background-size: 35px;
+    background-position: center;
+}
+#check {
+    width: 50px;
+    text-align: center;
+    cursor: pointer;
+}
+.checkhiden {
+    display: none;
+}
+.refresh {
+    background-image: url("http://erp.macromaq.com.br:3000/img/refreshgif.png");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    cursor: pointer;
+    width: 45px;
+    height: 45px;
+}
+.refreshgif {
+    background-image: url("http://erp.macromaq.com.br:3000/img/refreshgif.gif");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    width: 45px;
+    height: 45px;
+}
+.filial select {
+    width: 200px;
+    padding: 7px;
+    cursor: pointer;
+    margin: 0px;
+    border-radius: 5px;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    font-size: 12pt;
+}
+.filial select:hover {
+    background-color: rgb(139, 206, 245);
+}
+select:invalid {
+    color: gray;
+}
+.trhiden {
+    display: none;
+}
+.legSta img {
+    width: 15px;
+}
+.legSta {
+    font-family: Verdana, Geneva, Tahoma;
+}
+.logret {
+    display: flex;
+    position: fixed;
+    font-family: Arial, Helvetica, sans-serif;
+    width: 100%;
+    height: 100%;    
+    justify-content: center;
+}
+.msgret {
+    display: flex;
+    justify-content: center;
+    color: rgb(250, 248, 248);
+    font-weight: bold;
+    background-color: rgb(64, 94, 153);
+    width: 600px;
+    height: 100px;
+    border-radius: 5px;
+    margin-top: 5px;
+    box-shadow: 1px 10px 10px rgba(0, 0, 0, 0.171);
+}
+.errohidden {
+    display: none;
+}
+#nomtra {
+    margin-bottom: 5px;
+    width: 483px;
+    height: 15px;
+    padding: 15px;
+    border-radius: 7px;
+    font-size: 18pt;
+    margin-left: 10px;
+    margin-right: auto;
+    border: none;
+}
+#datini, #datfin {
+    width: 150px;
+    height: 35px;
+    border-radius: 5px;
+    font-size: 12pt;
+}
+#labdate {
+    font-size: 10pt;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+.msg {
+    position: fixed;
+    background-color: rgb(81, 247, 81);
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: bold;
+    color: white;
+    margin-left:50%;
+    top:0;
+    z-index: 1;
+    transform:translate(-50%);
+    box-shadow: 0px 0px 10px 0.2px;
+    word-wrap:break-word;
+    text-align: center;
+    width: 100%;
+    height: 60px;
+}
+.msghidden {
+    display: none;
+}

@@ -1,0 +1,64 @@
+<div class="cabec">
+    <div id="erro" class="erro">
+        <p>{{errovalide.erro}}</p>
+    </div>
+    <div class="logomacro">
+      <a href="/"><img src="http://erp.macromaq.com.br:3000/img/logomacromaq.png"></a>
+    </div>
+    <h2> Painel de Validação de Fretes </h2><br>
+    <div class="formchave">
+         <form method="POST" action="/fretes">
+             <input type="text" name="chave" placeholder="Chave CT-e" class="chave">
+             <input type="submit" value="Buscar" name="Buscar" class="btnchave">
+         </form>
+    </div>
+</div>
+
+<!--
+<div class="valcte">
+    <form action="/" method="POST">
+        <input type="text" name="numcte" id="inpnumcte" value="{{NumCtei}}">
+        <input type="text" name="emicte" id="inpemicte" value="{{NomEmii}}">
+        <input type="text" name="datemi" id="inpdatemi" value="{{DatEmii}}">
+        <input type="text" name="vlrcte" id="inpvlrcte" value="{{VlrCtei}}">
+        <input type="submit" value="Validar" class="btnvalid">
+    </form>
+
+</div>
+-->
+<div class="erro">
+    {{Erro}}
+</div>
+<div class="tabcte">
+    <table>
+    <thead>
+        <tr>
+            <th id="status">STATUS</th>
+            <th id="sigfil">FILIAL</th>
+            <th id="numcte">NÚMERO</th>
+            <th id="nomemi">EMISSOR</th>
+            <th id="cgcfor">CNPJ</th>
+            <th id="datemi">EMISSÃO</th>
+            <th id="vlrcte">VALOR</th>
+            <th class="refresh"><a href="/fretes"></a></th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each relacaocte}}
+        <tr>
+            <td class="status{{sitNfc}}" id="statustd"></td>
+            <td id="sigfil">{{sigFil}}</td>
+            <!--<td class="status"><img src="http://10.1.1.210:3000/img/status.png" class="status" value="{{SitNfc}}"></td>-->
+            <td>{{numCte}}</td>
+            <td>{{nomEmi}}</td>
+            <td>{{cgcFor}}</td>
+            <td id="datemi">{{datEmi}}</td>
+            <td id="vlrcte">{{vlrCte}}</td>
+            <td><a href="/validacao/{{chvNel}}/1"><img src="http://erp.macromaq.com.br:3000/img/check.png" id="check"></a></td>
+            <!--<td><a href="/fretes"><img src="http://10.1.1.210:3000/img/check.png" id="check"></a></td>-->
+            <!--<td><img src="http://10.1.1.210:3000/img/check.png" class="check" id="{{ChvNel}}"></td>-->
+        </tr>
+        {{/each}}
+    </tbody>
+    </table>
+</div>
