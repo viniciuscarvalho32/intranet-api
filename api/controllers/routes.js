@@ -318,9 +318,12 @@ routes.post("/erp/faturas-erp", multerConfig.single("txtFile"), async (req, res)
        valueFile = fuelLineSplit[41]; 
  
        //console.log(`Tamanho invoice: ${invoiceFile.length}`)
-         
+
+       //console.log(invoiceFile)
+
+       
       if (!invoiceFile) {
-         hasInvoice = false;
+          hasInvoice = false;
       }
       if (!dateFile)  {
           hasDate = false; 
@@ -340,11 +343,11 @@ routes.post("/erp/faturas-erp", multerConfig.single("txtFile"), async (req, res)
           value: vlrAbstFloat,
         });
      }
-     /*
-     if ((!hasInvoice) || (!hasDate) || (!hasIdDriver) || (!hasValue)) {
-          res.json({ message: "Uma ou mais colunas do arquivo estão em branco: K = Nota Fiscal, N = Data de Emissão, Y = CPF, AP = Valor, verifique!"});
-     } else {
-     */
+ 
+     //if ((!hasInvoice) || (!hasDate) || (!hasIdDriver) || (!hasValue)) {
+     //     res.json({ message: "Uma ou mais colunas do arquivo estão em branco: K = Nota Fiscal, N = Data de Emissão, Y = CPF, AP = Valor, verifique!"});
+     //} else {
+     
        const opts = {
          wsdl_options: {
              proxy: process.env.QUOTAGUARDSTATIC_URL,
@@ -379,7 +382,7 @@ routes.post("/erp/faturas-erp", multerConfig.single("txtFile"), async (req, res)
              } 
          })
        })
-     // }
+     //} 
 });
 /* Retornar os Rateios da Fatura para posterior Validação no ERP */
 routes.get("/erp/faturas-erp/fatura/:numfat", (req, res) => {
@@ -633,7 +636,7 @@ routes.post("/erp/cte", multerConfig.single("txtFile"), async (req, res) => {
     const urlRec = "http://erp.macromaq.com.br:8080/g5-senior-services/sapiens_SynccteAutomatizado?wsdl";
     //const urlRec = 'http://200.225.218.250:18080/g5-senior-services/sapiens_Syncretfatura?wsdl';
     soap.createClient(urlRec, opts, function (err, client) {
-      client.getXmlCte(args, function (err, result) {
+      client.setTableXml(args, function (err, result) {
         if (result) {
             const resultWSDL = result.result.retorno;
             //console.log(resultWSDL)
@@ -646,6 +649,48 @@ routes.post("/erp/cte", multerConfig.single("txtFile"), async (req, res) => {
       });
     });
   }); 
+}); 
+
+
+routes.post("/erp/cte/chaves", async (req, res) => {
+  
+    const arrayChaves = req.body;
+    const tipSer = arrayChaves.pop();
+    const newChavesArray = [{...arrayChaves}]
+    
+    const opts = {
+      wsdl_options: {
+        proxy: process.env.QUOTAGUARDSTATIC_URL,
+      },
+    };
+    let parameters = {
+        chavesNF: JSON.stringify(newChavesArray),
+        tipSer: tipSer 
+    };
+    let args = {
+      user: "vinicius",
+      password: "floripa",
+      encryption: 0,
+      parameters,
+    };
+  
+    //console.log(`Fatura: ${req.params.numfat} / Status: ${req.params.status}`)
+    let resultWSDL = "";
+    const urlRec = "http://erp.macromaq.com.br:8080/g5-senior-services/sapiens_SynccteAutomatizado?wsdl";
+    //const urlRec = 'http://200.225.218.250:18080/g5-senior-services/sapiens_Syncretfatura?wsdl';
+    soap.createClient(urlRec, opts, function (err, client) {
+      client.criarCTRC(args, function (err, result) {
+        if (result) {
+            const resultWSDL = result.result.retorno;
+            //console.log(resultWSDL)
+            res.send(resultWSDL);
+        } else {
+            res.send({
+            message: err,
+          });
+        }
+      });
+    }); 
 }); 
 
 
