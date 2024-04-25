@@ -1,13 +1,206 @@
-import { Router } from "express";
-import multer from "multer";
-import soap from "soap";
-import fs from "fs";
-import { Readable } from "stream";
-import readline from "readline";
-import { parseString } from 'xml2js';
-import util from "util";
+const Router = require('express')
+//import { Router } from "express";
+const multer = require('multer')
+//import multer from "multer";
+const soap = require('soap')
+//import soap from "soap";
+const fs = require('fs')
+//import fs from "fs";
+const { Readable } = require('node:stream')
+//const stream = require('node:stream');
+const readline = require('readline')
+//import readline from "readline";
+const xml2js = require('xml2js');
+const util = require('util')
+//import util from "util";
 const multerConfig = multer();
 const routes = Router();
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken')
+//import { auth } from "express-oauth2-jwt-bearer";
+//const auth = require('auth')
+//import "dotenv/config";
+require('dotenv/config')
+//Models
+const User = require('../models/User')
+var parser = new xml2js.Parser();
+const userERP = process.env.ERP_USER;
+const passERP = process.env.ERP_PASS;
+
+// const checkJwt = auth({
+//   audience: '{youApiIdentifier}',
+//   issuerBaseURL: 'http://erp.macromaq.com.br:3000',
+// })
+
+
+// routes.get('/api/auth', checkJwt, (req, res) => {
+//   console.log(checkJwt)
+//   res.json({
+//     message: 'Hello, you need to be authenticated'
+//   })
+
+// })
+
+
+routes.get('/teste', (req, res) => {
+  res.json()
+})
+routes.get('/api/auth', checkToken, (req, res) => {
+  res.status(200).json({
+    msg: "bem vindo a nossa API",
+  })
+})
+
+// Create User
+routes.post('/api/auth', async(req, res) => {
+  const {name, email, password, checkpassword} = req.body.user
+  // console.log(req.body.user)
+  // console.log(`Name: ${name}`)
+  // console.log(`Email: ${email}`)
+  // console.log(`Passoword: ${password}`)
+  // console.log(`checkpassword: ${checkpassword}`)
+
+  if (!name) {
+    return res.status(422).json({msg: 'O nome é obrigatório!'})
+  }
+  if (!email) {
+    return res.status(422).json({msg: 'O email é obrigatório!'})
+  }
+  if (!password) {
+    return res.status(422).json({msg: 'A senha é obrigatória!'})
+  } 
+  if (password !== checkpassword) {
+    return res.status(422).json({msg: 'As senhas não conferem!'})
+  }
+
+  // check if user exists
+  const userExists = await User.findOne({email: email})
+  if (userExists) {
+      return res.status(422).json({ msg: 'Por favor utilize outro e-mail!'})
+  }
+  // create password
+  const salt = await bcrypt.genSalt(12)
+  const passwordHash = await bcrypt.hash(password, salt)
+
+  const user = new User({
+    email,
+    name,
+    password: passwordHash
+  })
+
+  try {
+    user.save()
+    res.json({msg: 'Usuário cadastrado com sucesso!'})
+  } catch(error) {
+    res
+      .status(500)
+      .json({
+        msg: 'Aconteceu um erro no servidor, tente novamente mais tarde!'
+      })
+  }
+})
+
+// Login User
+routes.post('/auth/login', async(req, res) => {
+  const { email, password } = req.body;
+  //console.log(req.body)
+  if (!email) {
+    return res.status(422).json({ msg: "O email não pode estar em branco!"})
+  }
+  if (!password) {
+    return res.status(422).json({ msg: "A senha não pode estar em branco!"})
+  }
+  //Check if the User Exists
+  const user = await User.findOne({ email: email})
+  if (!user) {
+    return res.status(404).json({ msg: "O usuário não existe!"})
+  }
+
+  //Password validation
+  const checkPassword = await bcrypt.compare(password, user.password);
+  if (!checkPassword) {
+      return res.status(422).json({ msg: "Senha inválida!"})
+  }
+  try {
+    const secret = process.env.SECRET;
+    const token = jwt.sign({
+        id:user._id
+      },
+      secret
+    )
+    //res.set('id', user._id);
+    //res.set('Authorization', token) //envia token na resposta do servidor para o cliente
+     
+    res.status(200).json({
+      token: token
+     })
+  } catch(err) {
+    res
+      .status(500)
+      .json({
+        msg: err
+      })
+    }
+  //   function setToken() {
+  //     const minhaToken = localStorageService.get(''); //tokenName é um exemplo do nome da `data` aramazenada na storage
+  //   };
+  
+  //   function getToken () {
+  //     return minhaToken;
+  //   };
+  
+  //   return {
+  //     setToken: setToken(),
+  //     getToken: getToken
+  // };
+})
+
+//Private Route
+routes.get('/api/:id', checkToken, async(req, res) => {
+  const userId = req.params.id;
+  //console.log(`idParametro: ${userId}`)
+  const user = await User.findById(userId, '-password')
+
+  if (!user) {
+    return res.status(404).json({msg: "Usuário não encontrado!"})
+  } 
+  res.status(200).json({
+    user
+  })
+})
+
+//Token Validation
+function checkToken(req, res, next) {
+  const authHeader = req.headers['authorization']
+  //console.log(authHeader)
+  const token = authHeader && authHeader.split(" ")[1]
+ 
+  if (!token) {
+    return res.status(401).json({ msg: 'Acesso negado!'})
+  }
+
+  try {
+    const secret = process.env.SECRET;
+    jwt.verify(token, secret)
+    next()
+  } catch(error) {
+    return res.status(400).json({msg: "Token negado!" })
+  }
+}
+
+
+// routes.post('/api/auth', (req, res) => {
+//   const emailForm = req.body.email;
+//   const passwordForm = req.body.password;
+
+//   (async () => {
+      
+//       const db = client.db('painelintranet');
+//       const users = db.collection('users')
+//       const emailUser = (await users.find({}).toArray()).filter((select) => select.email == emailForm)
+//       res.send(emailUser)
+//   })()
+// })
 
 //Retornar todos as fretes disponíveis para lançamento.
 routes.get("/fretes", function (req, res) {
@@ -20,8 +213,8 @@ routes.get("/fretes", function (req, res) {
     chvNel: " ",
   };
   let args = {
-    user: "processo",
-    password: "123",
+    user: userERP,
+    password: passERP,
     encryption: 0,
     parameters,
   };
@@ -56,8 +249,8 @@ routes.post("/fretes", function (req, res) {
       chvNel: req.body.chvCte,
     };
     let args = {
-      user: "processo",
-      password: "123",
+      user: userERP,
+      password: passERP,
       encryption: 0,
       parameters,
     };
@@ -86,15 +279,14 @@ routes.get("/validacao/:chave/:val", function (req, res) {
     chvNel: req.params.chave + "/" + req.params.val,
   };
   let args = {
-    user: "processo",
-    password: "123",
+    user: userERP,
+    password: passERP,
     encryption: 0,
     parameters,
   };
   let resultWSDL = "";
 
-  const urlRec =
-    "http://erp.macromaq.com.br:8080/g5-senior-services/sapiens_Synccom_senior_g5_co_mcm_cpr_recebimentoeletronico?wsdl";
+  const urlRec = "http://erp.macromaq.com.br:8080/g5-senior-services/sapiens_Synccom_senior_g5_co_mcm_cpr_recebimentoeletronico?wsdl";
   //const urlRec = 'http://200.225.218.250:18080/g5-senior-services/sapiens_Synccom_senior_g5_co_mcm_cpr_recebimentoeletronico?wsdl';
   soap.createClient(urlRec, opts, function (err, client) {
     client.validacaoFrete(args, function (err, result) {
@@ -106,7 +298,10 @@ routes.get("/validacao/:chave/:val", function (req, res) {
   });
 });
 
-/* Painel Faturas HCM */
+
+
+
+/* Painel Faturas HCM Plano de Saúde */
 routes.get("/hcm/faturas", (req, res) => {
   const opts = {
     wsdl_options: {
@@ -115,8 +310,8 @@ routes.get("/hcm/faturas", (req, res) => {
   };
   let parameters = {};
   let args = {
-    user: "vinicius",
-    password: "floripa",
+    user: userERP,
+    password: passERP,
     encryption: 0,
     parameters,
   };
@@ -137,6 +332,7 @@ routes.get("/hcm/faturas", (req, res) => {
   });
 });
 
+//Construir o Rateio da Fatura de Plano de Saúde
 routes.get("/hcm/faturas/fatura/:numfat", (req, res) => {
   const opts = {
     wsdl_options: {
@@ -147,8 +343,8 @@ routes.get("/hcm/faturas/fatura/:numfat", (req, res) => {
     numFat: req.params.numfat,
   };
   let args = {
-    user: "vinicius",
-    password: "floripa",
+    user: userERP,
+    password: passERP,
     encryption: 0,
     parameters,
   };
@@ -184,8 +380,8 @@ routes.post("/hcm/rateio", (req, res) => {
     origem: req.body.origem,
   };
   let args = {
-    user: "vinicius",
-    password: "floripa",
+    user: userERP,
+    password: passERP,
     encryption: 0,
     parameters,
   };
@@ -198,9 +394,6 @@ routes.post("/hcm/rateio", (req, res) => {
   soap.createClient(urlRec, opts, function (err, client) {
     client.atualizarRateioCP_planoSaude(args, function (err, result) {
       if (result) {
-        //const resultWSDL = result.result.retorno;
-        //console.log(result)
-        //res.send(result)
         res.redirect(`/hcm/fatura/status/${req.body.numFat}/A`);
       } else {
         res.send({
@@ -222,8 +415,8 @@ routes.get("/hcm/fatura/status/:numfat/:status", (req, res) => {
     status: req.params.status,
   };
   let args = {
-    user: "vinicius",
-    password: "floripa",
+    user: userERP,
+    password: passERP,
     encryption: 0,
     parameters,
   };
@@ -248,8 +441,10 @@ routes.get("/hcm/fatura/status/:numfat/:status", (req, res) => {
   });
 });
 
-/* Painel Faturas ERP */
 
+
+
+/* Painel Faturas ERP - Abastecimento*/
 routes.get("/erp/faturas-erp", (req, res) => {
   const opts = {
     wsdl_options: {
@@ -258,8 +453,8 @@ routes.get("/erp/faturas-erp", (req, res) => {
   };
   let parameters = {};
   let args = {
-    user: "vinicius",
-    password: "floripa",
+    user: userERP,
+    password: passERP,
     encryption: 0,
     parameters,
   };
@@ -282,31 +477,32 @@ routes.get("/erp/faturas-erp", (req, res) => {
 });
 
 routes.post("/erp/faturas-erp", multerConfig.single("txtFile"), async (req, res) => {
+    //console.log(req.file.buffer.toString("utf-8"));
+    const { file } = req;
+    const { buffer } = file;
+    //console.log(buffer)
+    const readableFile = new Readable();
 
-     //console.log(req.file.buffer.toString("utf-8"));
-     const { file } = req;
-     const { buffer } = file;
-     const readableFile = new Readable();
- 
-     readableFile.push(buffer);
-     readableFile.push(null);
-     const refuelFile = readline.createInterface({
-       input: readableFile,
-     });
-     let fuelInvoice = [];
-     var hasInvoice;
-     var hasDate;
-     var hasIdDriver;
-     var hasValue;
-     var invoiceFile;
-     var dateFile;
-     var idFile;
-     var valueFile;
+    readableFile.push(buffer);
+    readableFile.push(null);
+    const refuelFile = readline.createInterface({
+      input: readableFile,
+    });
+    let fuelInvoice = [];
+    var hasInvoice;
+    var hasDate;
+    var hasIdDriver;
+    var hasValue;
+    var invoiceFile;
+    var dateFile;
+    var idFile;
+    var valueFile;
+    var lineNumber;
  
     for await (let line of refuelFile) {
        const fuelLineSplit = line.split(";");
        let valorAbst = fuelLineSplit[41];
-       
+              
        let vlrAbstFloat;
        if (valorAbst) {
          vlrAbstFloat = valorAbst.replace(",", ".");
@@ -317,16 +513,11 @@ routes.post("/erp/faturas-erp", multerConfig.single("txtFile"), async (req, res)
        idFile = fuelLineSplit[24];
        valueFile = fuelLineSplit[41]; 
  
-       //console.log(`Tamanho invoice: ${invoiceFile.length}`)
-
-       //console.log(invoiceFile)
-
-       
       if (!invoiceFile) {
-          hasInvoice = false;
+          return false;
       }
       if (!dateFile)  {
-          hasDate = false; 
+          return false; 
       }
       if (!idFile) {
           hasIdDriver = false; 
@@ -343,10 +534,17 @@ routes.post("/erp/faturas-erp", multerConfig.single("txtFile"), async (req, res)
           value: vlrAbstFloat,
         });
      }
- 
-     //if ((!hasInvoice) || (!hasDate) || (!hasIdDriver) || (!hasValue)) {
-     //     res.json({ message: "Uma ou mais colunas do arquivo estão em branco: K = Nota Fiscal, N = Data de Emissão, Y = CPF, AP = Valor, verifique!"});
-     //} else {
+     
+     const idConsist = fuelInvoice.map((id) => { 
+        if (id.idDriver == false) {
+          //console.log(id.idDriver)
+        }
+     })
+     
+    
+     if (idFile == "00.000-00") {
+        res.send({ message: "Uma ou mais linhas da coluna Y = CPF, possui o valor 00000000"});
+      }  else {
      
        const opts = {
          wsdl_options: {
@@ -359,8 +557,8 @@ routes.post("/erp/faturas-erp", multerConfig.single("txtFile"), async (req, res)
        //console.log(JSON.stringify(fuelInvoice));
  
        const args = {
-         user: "vinicius",
-         password: "floripa",
+         user: userERP,
+         password: passERP,
          encryption: 0,
          parameters,
        };
@@ -382,9 +580,9 @@ routes.post("/erp/faturas-erp", multerConfig.single("txtFile"), async (req, res)
              } 
          })
        })
-     //} 
+      } 
 });
-/* Retornar os Rateios da Fatura para posterior Validação no ERP */
+/* Construir e Retornar os Rateios da Fatura para posterior Validação no ERP */
 routes.get("/erp/faturas-erp/fatura/:numfat", (req, res) => {
   //console.log(req.params.numfat)
 
@@ -397,8 +595,8 @@ routes.get("/erp/faturas-erp/fatura/:numfat", (req, res) => {
     numFat: req.params.numfat,
   };
   let args = {
-    user: "vinicius",
-    password: "floripa",
+    user: userERP,
+    password: passERP,
     encryption: 0,
     parameters,
   };
@@ -436,8 +634,8 @@ routes.post("/erp/rateio", (req, res) => {
   //console.log(parameters);
 
   let args = {
-    user: "vinicius",
-    password: "floripa",
+    user: userERP,
+    password: passERP,
     encryption: 0,
     parameters,
   };
@@ -469,7 +667,7 @@ routes.post("/erp/rateio", (req, res) => {
     });
   });
 });
-
+// Atualização de Status da Fatura
 routes.get("/erp/fatura/status/:numfat/:status", (req, res) => {
   const opts = {
     wsdl_options: {
@@ -481,8 +679,8 @@ routes.get("/erp/fatura/status/:numfat/:status", (req, res) => {
     status: req.params.status,
   };
   let args = {
-    user: "vinicius",
-    password: "floripa",
+    user: userERP,
+    password: passERP,
     encryption: 0,
     parameters,
   };
@@ -507,7 +705,7 @@ routes.get("/erp/fatura/status/:numfat/:status", (req, res) => {
   });
 });
 
-routes.get("/erp/faturas-erp/fatura/rateiocc/:fat/:ccu", (req, res) => {
+routes.get("/erp/faturas-erp/fatura/email/:fat/:email", (req, res) => {
   const opts = {
     wsdl_options: {
       proxy: process.env.QUOTAGUARDSTATIC_URL,
@@ -515,13 +713,13 @@ routes.get("/erp/faturas-erp/fatura/rateiocc/:fat/:ccu", (req, res) => {
   };
   let parameters = {
     numFat: req.params.fat,
-    codCcu: req.params.ccu,
+    email: req.params.email,
   };
 
   //console.log(parameters)
   let args = {
-    user: "vinicius",
-    password: "floripa",
+    user: userERP,
+    password: passERP,
     encryption: 0,
     parameters,
   };
@@ -547,93 +745,67 @@ routes.get("/erp/faturas-erp/fatura/rateiocc/:fat/:ccu", (req, res) => {
 });
 
 
-// Requisião para recuperar os dados do CT-e na SEFAZ 
-routes.get('/erp/cte', (req, res) => {
-  /*
-  res.send({
-    'msg': 'Deu Certo sem o FS'
-  })
-  */
-  /*
-  const args = {
-    distDFeInt: {
-      attributes: {
-        xmlns: 'http://www.portalfiscal.inf.br/nfe',
-        versao: '1.01',
-      },
-      tpAmb: 1,
-      cUFAutor: 29,
-      CNPJ: '83675413000101',
-      distNSU: {
-        ultNSU: '000000000000000'
-      }
-    }
-  }
-  const url = 'https://www1.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx?wsdl';
-  const opts = {    
-      wsdl_options: {
-        forever: true,
-        rejectUnauthorized: false,
-        strictSSL: false,
-        pfx: fs.readFileSync('C:/inetpub/wwwroot/intranet-api/api/assets/certificadoMacromaq.pfx'),
-        passphrase: 'Macro@2023'
-      }
-  } 
-  soap.createClient(url, opts, function (err, client) {
+// Deletar Faturas de Abastecimento
+routes.get("/erp/faturas-erp/fatura/delete/:fat", (req, res) => {
+  const opts = {
+    wsdl_options: {
+      proxy: process.env.QUOTAGUARDSTATIC_URL,
+    },
+  };
+  let parameters = {
+    numFat: req.params.fat,
+    email: req.params.email,
+  };
 
-    if(err) {
-      console.log(err)
-    } else {
-      console.log('OK')
-    }
-    //err && console.log('ERRO1', err)
-    
-    
-    client.setSecurity(new soap.ClientSSLSecurityPFX('C:/inetpub/wwwroot/intranet-api/api/assets/certificadoMacromaq.pfx', 'Macro@2023', {
-      rejectUnauthorized: false,
-      strictSSL: false,
-      secureOptions: constants.SSL_OP_NO_TLSv1_2,
-      forever: trues
-    }));
-    
-    client.nfeDistDFeInteresse({ nfeDadosMsg: args }, (err, result) => {
-      err && console.log('ERRO2', err)
-  
-      console.log('>>>\n', JSON.stringify(result, null, 4), '\n<<<');
-    })
-    
-    
+  //console.log(parameters)
+  let args = {
+    user: userERP,
+    password: passERP,
+    encryption: 0,
+    parameters,
+  };
+  //console.log(`Fatura: ${req.params.numfat} / Status: ${req.params.status}`)
+
+  let resultWSDL = "";
+  const urlRec =
+    "http://erp.macromaq.com.br:8080/g5-senior-services/bs_SyncpainelFatura?wsdl";
+  //const urlRec = 'http://200.225.218.250:18080/g5-senior-services/sapiens_Syncretfatura?wsdl';
+  soap.createClient(urlRec, opts, function (err, client) {
+    client.deleteFatura(args, function (err, result) {
+      if (result) {
+        const resultWSDL = result.result.retorno;
+        //console.log(resultWSDL)
+        res.send(resultWSDL);
+      } else {
+        res.send({
+          message: err,
+        });
+      }
+    });
   });
-  */
-})
+});
 
-routes.post("/erp/cte", multerConfig.single("txtFile"), async (req, res) => {
-  
-  const arqXml = req.file.buffer.toString('utf-8');
-  //console.log(arqXml)
-
-  parseString(arqXml, function (err, results) {
-    let data = JSON.stringify(results);
-    //console.log(data)
-    const opts = {
-      wsdl_options: {
-        proxy: process.env.QUOTAGUARDSTATIC_URL,
-      },
-    };
-    let parameters = {
-      stringArquivo: data
-    };
-    let args = {
-      user: "vinicius",
-      password: "floripa",
-      encryption: 0,
-      parameters,
-    };
-  
-    //console.log(`Fatura: ${req.params.numfat} / Status: ${req.params.status}`)
-
-    let resultWSDL = "";
-    const urlRec = "http://erp.macromaq.com.br:8080/g5-senior-services/sapiens_SynccteAutomatizado?wsdl";
+// Geração de CTRC 
+// Requisião para recuperar arquivos Pendentes de criação de CTRC - apenas tabela Usu_TSetXML.Status = '' 
+routes.get('/erp/cte', (req, res) => {
+  //const arquivo = req.file.toString('utf-8');
+  //console.log(arquivo)
+  const opts = {
+    wsdl_options: {
+      proxy: process.env.QUOTAGUARDSTATIC_URL,
+    },
+  };
+  let parameters = {
+    stringArquivo: ""
+  };
+  let args = {
+    user: userERP,
+    password: passERP,
+    encryption: 0,
+    parameters,
+  };
+    
+  const urlRec = "http://erp.macromaq.com.br:8080/g5-senior-services/sapiens_SynccteAutomatizado?wsdl";
     //const urlRec = 'http://200.225.218.250:18080/g5-senior-services/sapiens_Syncretfatura?wsdl';
     soap.createClient(urlRec, opts, function (err, client) {
       client.setTableXml(args, function (err, result) {
@@ -648,16 +820,73 @@ routes.post("/erp/cte", multerConfig.single("txtFile"), async (req, res) => {
         }
       });
     });
-  }); 
+})
+
+routes.post("/erp/cte", multerConfig.single("txtFile"), async (req, res) => {
+  //const arquivo = req.file.buffer.toString('utf-8');
+  if (req.file) {
+    const arquivo = req.file.buffer.toString('utf-8');
+    //console.log(newArqXml)
+    parser.parseString(arquivo, function (err, results) {
+        const data = JSON.stringify(results);
+
+        const opts = {
+          wsdl_options: {
+            proxy: process.env.QUOTAGUARDSTATIC_URL,
+          },
+        };
+        let parameters = {
+          stringArquivo: data
+        };
+        let args = {
+          user: userERP,
+          password: passERP,
+          encryption: 0,
+          parameters,
+        };
+    
+    //   //console.log(`Fatura: ${req.params.numfat} / Status: ${req.params.status}`)
+      let resultWSDL = "";
+      const urlRec = "http://erp.macromaq.com.br:8080/g5-senior-services/sapiens_SynccteAutomatizado?wsdl";
+      //const urlRec = 'http://200.225.218.250:18080/g5-senior-services/sapiens_Syncretfatura?wsdl';
+      soap.createClient(urlRec, opts, function (err, client) {
+        client.setTableXml(args, function (err, result) {
+          if (result) {
+              const resultWSDL = result.result.retorno;
+              //console.log(resultWSDL)
+              res.send(resultWSDL);
+          } else {
+              res.send({
+             message: err,
+            });
+          }
+        });
+      });
+    })
+  } else {
+    res.send({
+      message: "Ocorreram erros na leitura do arquivo.",
+    });
+  }
 }); 
 
 
 routes.post("/erp/cte/chaves", async (req, res) => {
-  
-    const arrayChaves = req.body;
-    const tipSer = arrayChaves.pop();
-    const newChavesArray = [{...arrayChaves}]
     
+    const arrayChaves = req.body;
+    //console.log(arrayChaves)
+
+    const docAnt = arrayChaves.pop();
+    const tipSer = arrayChaves.pop();
+    //const newObjArr = JSON.parse(arrayChaves)
+      
+    //console.log(newObjArr)
+    
+    const newChavesArray = [{...arrayChaves}]
+    //console.log('Tipo: ' + tipSer);
+    //console.log('Doc Ant: ' + docAnt);
+    //console.log(newChavesArray)
+
     const opts = {
       wsdl_options: {
         proxy: process.env.QUOTAGUARDSTATIC_URL,
@@ -665,11 +894,13 @@ routes.post("/erp/cte/chaves", async (req, res) => {
     };
     let parameters = {
         chavesNF: JSON.stringify(newChavesArray),
-        tipSer: tipSer 
+        tipSer: tipSer,
+        docAnt: docAnt 
     };
+    
     let args = {
-      user: "vinicius",
-      password: "floripa",
+      user: userERP,
+      password: passERP,
       encryption: 0,
       parameters,
     };
@@ -693,11 +924,44 @@ routes.post("/erp/cte/chaves", async (req, res) => {
     }); 
 }); 
 
+routes.post('/erp/cte/delete/chave', async (req, res) => {
+  const chave = req.body.chvCtrc;
+  //console.log(chave)
+  const opts = {
+    wsdl_options: {
+      proxy: process.env.QUOTAGUARDSTATIC_URL,
+    },
+  };
+  let parameters = {
+      chave: chave 
+  };
 
-routes.get("tickets", (req, res) => {
-  
-  console.log(`response: ${res}`);
+  let args = {
+    user: userERP,
+    password: passERP,
+    encryption: 0,
+    parameters,
+  };
 
+  //console.log(`Fatura: ${req.params.numfat} / Status: ${req.params.status}`)
+  let resultWSDL = "";
+  const urlRec = "http://erp.macromaq.com.br:8080/g5-senior-services/sapiens_SynccteAutomatizado?wsdl";
+  //const urlRec = 'http://200.225.218.250:18080/g5-senior-services/sapiens_Syncretfatura?wsdl';
+  soap.createClient(urlRec, opts, function (err, client) {
+    client.deleteXml(args, function (err, result) {
+      if (result) {
+          //const resultWSDL = result.result.retorno;
+          //console.log(resultWSDL)
+          res.send( {
+            messagem: "Chave excluída com sucesso"
+          });
+      } else {
+          res.send({
+          message: err,
+        });
+      }
+    });
+  });
 })
 
-export { routes };
+module.exports = routes;

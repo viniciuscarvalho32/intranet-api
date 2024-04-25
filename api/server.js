@@ -1,29 +1,38 @@
-import express from 'express';
+const express = require('express')
+//import express from 'express';
 const app = new express();
-import bodyParser from 'body-parser';
-import cors from 'cors';
-
-//import util from 'util';
-//import handlebars from 'express-handlebars';
-//import stringify from 'querystring';
-//import request from 'http';
-
-import { routes } from './controllers/routes.js';
-/*
-import { MongoClient } from 'mongodb';
-import { mongoose } from 'mongoose';
-
-const uri = "mongodb://localhost:27017"
-*/
-//app.engine('handlebars', handlebars({defaultLayout: 'main'}));
-//app.set('view engine', 'handlebars');
+const bodyParser = require('body-parser')
+//import bodyParser from 'body-parser';
+const cors = require('cors')
+//import cors from 'cors';
+const soap = require('soap')
+//import soap from 'soap';
+const routes = require('./controllers/routes.js')
+//import { routes } from './controllers/routes.js';
+const mongoose = require('mongoose')
+//import mongoose from 'mongoose';
+const cookieParser = require('cookie-parser');
+require("dotenv/config");
 app.use(bodyParser.urlencoded({extended: false}))
 app.use(bodyParser.json());
 app.use(express.static('public'));
-
 app.use(cors());
-app.use(routes)
-app.listen(3000);
+app.use(routes);
+app.use(cookieParser(process.env.SECRET))
+app.use((req,res,next) => {
+    const token = req.signedCookies["meuToken"]
+    req.headers.authorization = token; //aqui adicionamos o token ao cabecario da requisicao
+    next();
+})
+
+const connectionString = process.env.DB_CONEXAO;
+
+mongoose.connect(connectionString)
+    .then(() => {
+        app.listen(3000)
+        console.log('Conectou ao banco!')
+    })
+    .catch((err) => console.log(err))
 
 
 
