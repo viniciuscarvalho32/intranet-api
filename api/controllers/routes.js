@@ -27,20 +27,6 @@ var parser = new xml2js.Parser();
 const userERP = process.env.ERP_USER;
 const passERP = process.env.ERP_PASS;
 
-// const checkJwt = auth({
-//   audience: '{youApiIdentifier}',
-//   issuerBaseURL: 'http://erp.macromaq.com.br:3000',
-// })
-
-
-// routes.get('/api/auth', checkJwt, (req, res) => {
-//   console.log(checkJwt)
-//   res.json({
-//     message: 'Hello, you need to be authenticated'
-//   })
-
-// })
-
 
 routes.get('/teste', (req, res) => {
   res.json()
@@ -52,7 +38,7 @@ routes.get('/api/auth', checkToken, (req, res) => {
 })
 
 // Create User
-routes.post('/api/auth', async(req, res) => {
+routes.post('/api/auth', checkToken, async(req, res) => {
   const {name, email, password, checkpassword} = req.body.user
   // console.log(req.body.user)
   // console.log(`Name: ${name}`)
@@ -101,7 +87,7 @@ routes.post('/api/auth', async(req, res) => {
 })
 
 // Login User
-routes.post('/auth/login', async(req, res) => {
+routes.post('/auth/login', checkToken, async(req, res) => {
   const { email, password } = req.body;
   //console.log(req.body)
   if (!email) {
@@ -128,11 +114,12 @@ routes.post('/auth/login', async(req, res) => {
       },
       secret
     )
-    //res.set('id', user._id);
-    //res.set('Authorization', token) //envia token na resposta do servidor para o cliente
+    //console.log(`Console Token: ${token}`)
+    // res.set('Authorization', token) //envia token na resposta do servidor para o cliente
      
     res.status(200).json({
-      token: token
+      token: token,
+      uuID:user._id
      })
   } catch(err) {
     res
@@ -156,10 +143,12 @@ routes.post('/auth/login', async(req, res) => {
 })
 
 //Private Route
-routes.get('/api/:id', checkToken, async(req, res) => {
-  const userId = req.params.id;
+routes.post('/api', checkToken, async(req, res) => {
+  const {uuID } = req.body;
+  //const userId = req.body.uuID;
+
   //console.log(`idParametro: ${userId}`)
-  const user = await User.findById(userId, '-password')
+  const user = await User.findById(uuID, '-password')
 
   if (!user) {
     return res.status(404).json({msg: "Usuário não encontrado!"})
@@ -171,9 +160,13 @@ routes.get('/api/:id', checkToken, async(req, res) => {
 
 //Token Validation
 function checkToken(req, res, next) {
-  const authHeader = req.headers['authorization']
-  //console.log(authHeader)
-  const token = authHeader && authHeader.split(" ")[1]
+  // console.log(req.body.token)
+  const token = req.body.token;
+  // const reqHeader = req.rowheaders;
+  // console.log(`reqHeader: ${reqHeader}`)
+  // const authHeader = req.headers['token']
+  // console.log(`authHeader: ${authHeader}`)
+  // const token = authHeader && authHeader.split(" ")[1]
  
   if (!token) {
     return res.status(401).json({ msg: 'Acesso negado!'})
@@ -203,7 +196,8 @@ function checkToken(req, res, next) {
 // })
 
 //Retornar todos as fretes disponíveis para lançamento.
-routes.get("/fretes", function (req, res) {
+routes.get("/fretes/:token", async(req, res) => {
+
   const opts = {
     wsdl_options: {
       proxy: process.env.QUOTAGUARDSTATIC_URL,
@@ -299,10 +293,9 @@ routes.get("/validacao/:chave/:val", function (req, res) {
 });
 
 
-
-
 /* Painel Faturas HCM Plano de Saúde */
 routes.get("/hcm/faturas", (req, res) => {
+  
   const opts = {
     wsdl_options: {
       proxy: process.env.QUOTAGUARDSTATIC_URL,
@@ -334,6 +327,8 @@ routes.get("/hcm/faturas", (req, res) => {
 
 //Construir o Rateio da Fatura de Plano de Saúde
 routes.get("/hcm/faturas/fatura/:numfat", (req, res) => {
+
+  //console.log(req.params.numfat)
   const opts = {
     wsdl_options: {
       proxy: process.env.QUOTAGUARDSTATIC_URL,
@@ -359,7 +354,7 @@ routes.get("/hcm/faturas/fatura/:numfat", (req, res) => {
         res.send(resultWSDL);
       } else {
         res.send({
-          message: err,
+          message: 'Ocorreram erros ao consultar os dados no Servidor.',
         });
       }
     });
@@ -726,8 +721,7 @@ routes.get("/erp/faturas-erp/fatura/email/:fat/:email", (req, res) => {
   //console.log(`Fatura: ${req.params.numfat} / Status: ${req.params.status}`)
 
   let resultWSDL = "";
-  const urlRec =
-    "http://erp.macromaq.com.br:8080/g5-senior-services/bs_SyncpainelFatura?wsdl";
+  const urlRec = "http://erp.macromaq.com.br:8080/g5-senior-services/bs_SyncpainelFatura?wsdl";
   //const urlRec = 'http://200.225.218.250:18080/g5-senior-services/sapiens_Syncretfatura?wsdl';
   soap.createClient(urlRec, opts, function (err, client) {
     client.getRateioColaborador(args, function (err, result) {
@@ -830,6 +824,8 @@ routes.post("/erp/cte", multerConfig.single("txtFile"), async (req, res) => {
     parser.parseString(arquivo, function (err, results) {
         const data = JSON.stringify(results);
 
+        //console.log(data)
+
         const opts = {
           wsdl_options: {
             proxy: process.env.QUOTAGUARDSTATIC_URL,
@@ -885,7 +881,7 @@ routes.post("/erp/cte/chaves", async (req, res) => {
     const newChavesArray = [{...arrayChaves}]
     //console.log('Tipo: ' + tipSer);
     //console.log('Doc Ant: ' + docAnt);
-    //console.log(newChavesArray)
+    //console.log(JSON.stringify(newChavesArray))
 
     const opts = {
       wsdl_options: {
@@ -912,8 +908,8 @@ routes.post("/erp/cte/chaves", async (req, res) => {
     soap.createClient(urlRec, opts, function (err, client) {
       client.criarCTRC(args, function (err, result) {
         if (result) {
+            //console.log(result)
             const resultWSDL = result.result.retorno;
-            //console.log(resultWSDL)
             res.send(resultWSDL);
         } else {
             res.send({
